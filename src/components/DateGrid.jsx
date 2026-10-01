@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useSyncExternalStore } from 'react'
 import {
   DndContext, DragOverlay, MouseSensor, TouchSensor, KeyboardSensor, useSensor, useSensors,
   closestCorners, useDroppable
@@ -20,6 +20,21 @@ const todayStr = () => {
   const p = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
+// Phones get stacked sections (lists top to bottom) instead of a wide table.
+const MOBILE_QUERY = '(max-width: 767px)'
+const isMobileNow = () => typeof window !== 'undefined' && window.matchMedia?.(MOBILE_QUERY).matches
+function useIsMobile() {
+  return useSyncExternalStore(
+    (cb) => {
+      const m = window.matchMedia(MOBILE_QUERY)
+      m.addEventListener('change', cb)
+      return () => m.removeEventListener('change', cb)
+    },
+    isMobileNow,
+    () => false
+  )
+}
+
 const pad = (n) => String(n).padStart(2, '0')
 const shiftDay = (day, n) => {
   const d = new Date(`${day}T00:00:00`)
@@ -74,7 +89,7 @@ function CellAdd({ onAdd, label }) {
   )
 }
 
-function Cell({ day, label, col, items, fieldCols, onEdit, onAdd, tint, collapsed, virtual, readOnly }) {
+function Cell({ day, label, col, items, fieldCols, onEdit, onAdd, tint, collapsed, virtual, readOnly, compact }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `cell:${cellId(day, col.id)}`,
     data: { type: 'cell', day, columnId: col.id },
@@ -95,7 +110,11 @@ function Cell({ day, label, col, items, fieldCols, onEdit, onAdd, tint, collapse
     <div
       ref={setNodeRef}
       style={tint}
-      className={cls('flex min-h-[8rem] flex-col gap-2 border-b border-r border-line p-2 transition-colors', isOver && 'bg-accent/5')}
+      className={cls(
+        'flex flex-col gap-2 border-b border-line p-2 transition-colors',
+        compact ? 'min-h-[5rem]' : 'min-h-[8rem] border-r',
+        isOver && 'bg-accent/5'
+      )}
     >
       <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
         {items.map((item) => (
@@ -107,16 +126,19 @@ function Cell({ day, label, col, items, fieldCols, onEdit, onAdd, tint, collapse
   )
 }
 
-function Row({ row, rowIdx, stripe, listCols, items, fieldCols, onEdit, onAdd, onRemove, onDate }) {
+function Row({ row, rowIdx, stripe, listCols, items, fieldCols, onEdit, onAdd, onRemove, onDate, mobile }) {
   const virtual = !!row.virtual
   const readOnly = virtual && row.date < todayStr()
   const day = row.id
   const rowTint = stripe?.row && rowIdx % 2 === 1 ? `rgb(${stripe.row} / 0.14)` : null
-  return (
-    <>
+  const headerEl = (
       <div
         style={rowTint ? { backgroundImage: `linear-gradient(${rowTint}, ${rowTint})` } : undefined}
-        className="sticky left-0 z-10 flex items-start justify-between gap-1 border-b border-r border-line bg-sunken p-3"
+        className={
+          mobile
+            ? 'relative flex items-start justify-between gap-1 border-b border-line bg-sunken p-3'
+            : 'sticky left-0 z-10 flex items-start justify-between gap-1 border-b border-r border-line bg-sunken p-3'
+        }
       >
         {day ? (
           <div className="min-w-0 flex-1 space-y-1.5 pr-5">
@@ -157,7 +179,8 @@ function Row({ row, rowIdx, stripe, listCols, items, fieldCols, onEdit, onAdd, o
           </button>
         )}
       </div>
-      {listCols.map((col, ci) => {
+  )
+  const cellEls = listCols.map((col, ci) => {
         const colTint = stripe?.col && ci % 2 === 1 ? `rgb(${stripe.col} / 0.12)` : null
         const layers = [rowTint, colTint].filter(Boolean).map((c) => `linear-gradient(${c}, ${c})`)
         return (
@@ -167,7 +190,8 @@ function Row({ row, rowIdx, stripe, listCols, items, fieldCols, onEdit, onAdd, o
           day={day}
           virtual={virtual}
           readOnly={readOnly}
-          collapsed={col.width === 'collapsed'}
+          compact={mobile}
+          collapsed={!mobile && col.width === 'collapsed'}
           label={rowTitle(row)}
           col={col}
           items={items.filter((i) => i.columnId === col.id)}
@@ -176,8 +200,30 @@ function Row({ row, rowIdx, stripe, listCols, items, fieldCols, onEdit, onAdd, o
           onAdd={(lines) => onAdd(row, col.id, lines)}
         />
         )
-      })}
-    </>
+      })
+
+  if (!mobile)
+    return (
+      <>
+        {headerEl}
+        {cellEls}
+      </>
+    )
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-line bg-surface">
+      {headerEl}
+      {listCols.map((col, ci) => (
+        <div key={col.id}>
+          <div className="flex items-center gap-2 border-b border-line bg-sunken/60 px-3 py-1.5">
+            <Icon name={col.icon} size={15} className="shrink-0 text-accent" />
+            <span className="truncate text-sm font-bold">{col.title}</span>
+            <span className="text-xs tabular-nums text-muted">{items.filter((i) => i.columnId === col.id).length}</span>
+          </div>
+          {cellEls[ci]}
+        </div>
+      ))}
+    </section>
   )
 }
 
@@ -189,7 +235,9 @@ export default function DateGrid({ dateCol }) {
   const fieldCols = columns.filter((c) => c.type !== 'list' && c.id !== dateCol.id)
   const [active, setActive] = useState(null)
   const [editingId, setEditingId] = useState(null)
-  const [view, setView] = useState('all') // all | month | day
+  const mobile = useIsMobile()
+  // Phones open on today's day view; wider screens open on the full table.
+  const [view, setView] = useState(() => (isMobileNow() ? 'day' : 'all')) // all | month | day
   const [month, setMonth] = useState(() => todayStr().slice(0, 7))
   const [dayPick, setDayPick] = useState(todayStr)
   const [confirm, confirmDialog] = useConfirm()
@@ -338,6 +386,23 @@ export default function DateGrid({ dateCol }) {
     })
   }
 
+  const rowEls = rows.map((row, rowIdx) => (
+    <Row
+      key={row.id || 'none'}
+      row={row}
+      mobile={mobile}
+      onDate={(date) => setRowDate(row.id, date)}
+      rowIdx={rowIdx}
+      stripe={stripe}
+      listCols={listCols}
+      items={data.items.filter((i) => dayOf(i) === row.id)}
+      fieldCols={fieldCols}
+      onEdit={setEditingId}
+      onAdd={addTasks}
+      onRemove={() => removeDay(row)}
+    />
+  ))
+
   const editing = data.items.find((i) => i.id === editingId)
   const activeItem = active ? data.items.find((i) => i.id === active) : null
   // px is set by dragging a header's right edge; `drag` holds the live width until release.
@@ -442,6 +507,14 @@ export default function DateGrid({ dateCol }) {
         onDragEnd={onDragEnd}
         onDragCancel={() => setActive(null)}
       >
+        {mobile ? (
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain">
+            {rowEls}
+            {rows.length === 0 && (
+              <p className="px-1 py-10 text-center text-sm text-muted">No dates in this month yet.</p>
+            )}
+          </div>
+        ) : (
         <div className="min-h-0 flex-1 overflow-auto overscroll-contain rounded-xl border border-line bg-surface">
           <div className="grid min-w-max" style={{ gridTemplateColumns: cols }}>
             <div className="sticky left-0 top-0 z-30 flex h-12 items-center gap-2 border-b border-r border-line bg-sunken px-3">
@@ -491,23 +564,10 @@ export default function DateGrid({ dateCol }) {
               )
             })}
 
-            {rows.map((row, rowIdx) => (
-              <Row
-                key={row.id || 'none'}
-                row={row}
-                onDate={(date) => setRowDate(row.id, date)}
-                rowIdx={rowIdx}
-                stripe={stripe}
-                listCols={listCols}
-                items={data.items.filter((i) => dayOf(i) === row.id)}
-                fieldCols={fieldCols}
-                onEdit={setEditingId}
-                onAdd={addTasks}
-                onRemove={() => removeDay(row)}
-              />
-            ))}
+            {rowEls}
           </div>
         </div>
+        )}
 
         <DragOverlay>{activeItem && <CardBody item={activeItem} fieldCols={fieldCols} lifted />}</DragOverlay>
       </DndContext>

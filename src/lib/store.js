@@ -19,6 +19,16 @@ export const STRIPE_THEMES = [
   { value: 'slate', label: 'Slate', row: '120 130 145', col: '90 110 140' }
 ]
 
+// Sticky-note paper colors (shown the same in light and dark mode).
+export const NOTE_COLORS = [
+  { value: 'yellow', label: 'Yellow', bg: '#fff3a3', edge: '#e6d56a' },
+  { value: 'pink', label: 'Pink', bg: '#ffc9d9', edge: '#ee9db6' },
+  { value: 'blue', label: 'Blue', bg: '#bfe3ff', edge: '#8fc3ee' },
+  { value: 'green', label: 'Green', bg: '#c9f0c0', edge: '#98d48c' },
+  { value: 'orange', label: 'Orange', bg: '#ffd9a8', edge: '#efb470' },
+  { value: 'purple', label: 'Purple', bg: '#e1d0ff', edge: '#bfa3ee' }
+]
+
 export function defaultData() {
   const todo = uid('c'), doing = uid('c'), done = uid('c')
   return {
@@ -35,6 +45,7 @@ export function defaultData() {
     items: [
       { id: uid('t'), text: 'Drag me to Completed', columnId: todo, createdAt: Date.now(), fields: {} }
     ],
+    notes: [],
     profile: { displayName: '', customPicture: null }
   }
 }
@@ -71,6 +82,12 @@ export function normalize(raw) {
       columns
     },
     items,
+    notes: (Array.isArray(d.notes) ? d.notes : []).map((n) => ({
+      id: n.id || uid('n'),
+      text: typeof n.text === 'string' ? n.text : '',
+      color: NOTE_COLORS.some((c) => c.value === n.color) ? n.color : 'yellow',
+      createdAt: n.createdAt || Date.now()
+    })),
     profile: { displayName: '', customPicture: null, ...(d.profile || {}) }
   }
 }

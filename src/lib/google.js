@@ -1,7 +1,7 @@
 // Google Identity Services (token model). No backend, no client secret.
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
-export const SCOPES =
-  'openid email profile https://www.googleapis.com/auth/drive.appdata'
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata'
+export const SCOPES = `openid email profile ${DRIVE_SCOPE}`
 
 const SESSION_KEY = 'lanes.session'
 const HINT_KEY = 'lanes.user'
@@ -57,7 +57,9 @@ export async function requestToken({ prompt = '', email } = {}) {
       scope: SCOPES,
       callback: (resp) => {
         if (resp.error) return reject(new GoogleAuthError(resp.error, resp.error_description))
-        if (!window.google.accounts.oauth2.hasGrantedAllScopes(resp, SCOPES)) {
+        // Only the Drive scope matters. openid/email/profile come back under longer
+        // names, which can make hasGrantedAllScopes report false for a valid sign-in.
+        if (!String(resp.scope || '').split(' ').includes(DRIVE_SCOPE)) {
           return reject(new GoogleAuthError('scope_missing'))
         }
         resolve({

@@ -1,11 +1,12 @@
 import { NavLink, Outlet, Link } from 'react-router-dom'
-import { LayoutDashboard, Settings, UserRound, Loader2, Check, CloudOff } from 'lucide-react'
+import { LayoutDashboard, Settings, UserRound, KeyRound, Loader2, Check, CloudOff } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useData } from '../context/DataContext.jsx'
 import Avatar from './Avatar.jsx'
 
 const nav = [
   { to: '/', label: 'Board', icon: LayoutDashboard, end: true },
+  { to: '/credentials', label: 'Credentials', icon: KeyRound },
   { to: '/settings', label: 'Settings', icon: Settings },
   { to: '/profile', label: 'Profile', icon: UserRound }
 ]
@@ -49,7 +50,7 @@ export default function Layout() {
         <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-4 px-4">
           <Link to="/"><Brand /></Link>
           <nav className="ml-4 hidden gap-1 md:flex" aria-label="Main">
-            {nav.slice(0, 2).map(({ to, label, icon: I, end }) => (
+            {nav.filter((n) => n.to !== '/profile').map(({ to, label, icon: I, end }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -89,7 +90,7 @@ export default function Layout() {
 
       <nav
         aria-label="Main"
-        className="z-30 grid shrink-0 grid-cols-3 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="z-30 grid shrink-0 grid-cols-4 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         {nav.map(({ to, label, icon: I, end }) => (
           <NavLink

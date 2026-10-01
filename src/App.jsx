@@ -7,6 +7,7 @@ import Login from './pages/Login.jsx'
 import Home from './pages/Home.jsx'
 import Settings from './pages/Settings.jsx'
 import Profile from './pages/Profile.jsx'
+import Credentials from './pages/Credentials.jsx'
 
 function Splash({ children }) {
   return (
@@ -38,6 +39,7 @@ function Shell() {
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="credentials" element={<Credentials />} />
         <Route path="profile" element={<Profile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

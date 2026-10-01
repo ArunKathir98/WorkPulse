@@ -46,6 +46,7 @@ export function defaultData() {
       { id: uid('t'), text: 'Drag me to Completed', columnId: todo, createdAt: Date.now(), fields: {} }
     ],
     notes: [],
+    credentials: [],
     profile: { displayName: '', customPicture: null }
   }
 }
@@ -78,10 +79,30 @@ export function normalize(raw) {
     version: 1,
     settings: {
       theme: d.settings?.theme === 'dark' ? 'dark' : d.settings?.theme === 'light' ? 'light' : base.settings.theme,
+      security:
+        typeof d.settings?.security?.salt === 'string' && typeof d.settings?.security?.verifier === 'string'
+          ? {
+              salt: d.settings.security.salt,
+              verifier: d.settings.security.verifier,
+              pub: d.settings.security.pub || null,
+              wrapped: d.settings.security.wrapped || null
+            }
+          : null,
       stripes: STRIPE_THEMES.some((t) => t.value === d.settings?.stripes) ? d.settings.stripes : base.settings.stripes,
       columns
     },
     items,
+    credentials: (Array.isArray(d.credentials) ? d.credentials : []).map((c) => ({
+      id: c.id || uid('k'),
+      name: String(c.name || ''),
+      url: String(c.url || ''),
+      username: String(c.username || ''),
+      password: typeof c.password === 'string' ? c.password : '',
+      protected: !!c.protected && !!c.enc,
+      enc: c.enc && c.enc.iv && c.enc.ct ? { iv: c.enc.iv, ct: c.enc.ct, ek: c.enc.ek || null } : null,
+      notes: String(c.notes || ''),
+      createdAt: c.createdAt || Date.now()
+    })),
     notes: (Array.isArray(d.notes) ? d.notes : []).map((n) => ({
       id: n.id || uid('n'),
       text: typeof n.text === 'string' ? n.text : '',

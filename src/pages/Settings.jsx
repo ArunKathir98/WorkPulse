@@ -4,6 +4,7 @@ import { useData } from '../context/DataContext.jsx'
 import { Icon } from '../lib/icons.jsx'
 import IconPicker from '../components/IconPicker.jsx'
 import { useConfirm } from '../components/ConfirmDialog.jsx'
+import SecurityKeySettings from '../components/SecurityKeySettings.jsx'
 import { COLUMN_TYPES, STRIPE_THEMES, uid } from '../lib/store.js'
 
 function ColumnForm({ initial, onSubmit, onCancel }) {
@@ -147,6 +148,8 @@ export default function Settings() {
           ))}
         </div>
       </fieldset>
+
+      <SecurityKeySettings />
 
       <section className="card p-5">
         <div className="flex items-center justify-between gap-3">

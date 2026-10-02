@@ -3,6 +3,8 @@ import { LayoutDashboard, Settings, UserRound, KeyRound, Loader2, Check, CloudOf
 import { useAuth } from '../context/AuthContext.jsx'
 import { useData } from '../context/DataContext.jsx'
 import Avatar from './Avatar.jsx'
+import { HeaderQuote } from './DailyQuote.jsx'
+import ReminderEngine from './ReminderEngine.jsx'
 
 const nav = [
   { to: '/', label: 'Board', icon: LayoutDashboard, end: true },
@@ -65,6 +67,7 @@ export default function Layout() {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-4">
+            <HeaderQuote />
             <SaveStatus />
             <Link to="/profile" aria-label="Profile" className="hidden md:block"><Avatar /></Link>
           </div>
@@ -87,6 +90,7 @@ export default function Layout() {
       )}
 
       <main className="flex min-h-0 flex-1 flex-col overflow-y-auto"><Outlet /></main>
+      <ReminderEngine />
 
       <nav
         aria-label="Main"

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Lock, Loader2 } from 'lucide-react'
 import { unlock } from '../lib/crypto.js'
 
@@ -68,6 +69,9 @@ export function PinDialog({ security, title, message, onDone }) {
             aria-describedby={error ? 'pin-error' : undefined}
           />
           {error && <p id="pin-error" role="alert" className="mt-1.5 text-sm text-danger">{error}</p>}
+          <Link to="/settings" onClick={() => onDone(null)} className="mt-2 inline-block text-xs font-semibold text-accent underline">
+            Forgot your security key?
+          </Link>
         </div>
         <div className="flex justify-end gap-2">
           <button type="button" onClick={() => onDone(null)} className="btn">Cancel</button>

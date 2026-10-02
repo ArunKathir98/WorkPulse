@@ -1,17 +1,23 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { LayoutDashboard, StickyNote } from 'lucide-react'
+import { LayoutDashboard, StickyNote, BellRing } from 'lucide-react'
 import { useData } from '../context/DataContext.jsx'
 import Board from '../components/Board.jsx'
 import NotesBoard from '../components/NotesBoard.jsx'
+import RemindersBoard from '../components/RemindersBoard.jsx'
+import DailyQuote from '../components/DailyQuote.jsx'
 
 const KINDS = [
   { value: 'tasks', label: 'Tasks', I: LayoutDashboard },
-  { value: 'notes', label: 'Notes', I: StickyNote }
+  { value: 'notes', label: 'Notes', I: StickyNote },
+  { value: 'reminders', label: 'Reminders', I: BellRing }
 ]
 const KEY = 'workpulse.boardKind'
 const readKind = () => {
-  try { return localStorage.getItem(KEY) === 'notes' ? 'notes' : 'tasks' } catch { return 'tasks' }
+  try {
+    const k = localStorage.getItem(KEY)
+    return k === 'notes' || k === 'reminders' ? k : 'tasks'
+  } catch { return 'tasks' }
 }
 
 export default function Home() {
@@ -26,6 +32,8 @@ export default function Home() {
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-3 py-3 md:px-4">
+      <DailyQuote />
+
       <div role="tablist" aria-label="Board type" className="mb-3 flex shrink-0 gap-1 border-b border-line">
         {KINDS.map(({ value, label, I }) => (
           <button
@@ -46,6 +54,8 @@ export default function Home() {
 
       {kind === 'notes' ? (
         <NotesBoard />
+      ) : kind === 'reminders' ? (
+        <RemindersBoard />
       ) : hasLists ? (
         <Board />
       ) : (

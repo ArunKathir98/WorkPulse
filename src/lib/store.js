@@ -47,6 +47,7 @@ export function defaultData() {
     ],
     notes: [],
     credentials: [],
+    reminders: [],
     profile: { displayName: '', customPicture: null }
   }
 }
@@ -85,7 +86,11 @@ export function normalize(raw) {
               salt: d.settings.security.salt,
               verifier: d.settings.security.verifier,
               pub: d.settings.security.pub || null,
-              wrapped: d.settings.security.wrapped || null
+              wrapped: d.settings.security.wrapped || null,
+              recovery:
+                d.settings.security.recovery?.salt && d.settings.security.recovery?.verifier && d.settings.security.recovery?.wrapped
+                  ? d.settings.security.recovery
+                  : null
             }
           : null,
       stripes: STRIPE_THEMES.some((t) => t.value === d.settings?.stripes) ? d.settings.stripes : base.settings.stripes,
@@ -101,8 +106,25 @@ export function normalize(raw) {
       protected: !!c.protected && !!c.enc,
       enc: c.enc && c.enc.iv && c.enc.ct ? { iv: c.enc.iv, ct: c.enc.ct, ek: c.enc.ek || null } : null,
       notes: String(c.notes || ''),
+      lost: !!c.lost && !c.enc && !c.password,
       createdAt: c.createdAt || Date.now()
     })),
+    reminders: (Array.isArray(d.reminders) ? d.reminders : [])
+      .filter((r) => Number.isFinite(r?.at))
+      .map((r) => {
+        const offsets = (Array.isArray(r.offsets) ? r.offsets : [0]).filter((o) => [0, 5, 10].includes(o))
+        return {
+          id: r.id || uid('r'),
+          title: String(r.title || ''),
+          notes: String(r.notes || ''),
+          at: r.at,
+          offsets: offsets.length ? offsets : [0],
+          fired: r.fired && typeof r.fired === 'object' ? r.fired : {},
+          snoozedUntil: Number.isFinite(r.snoozedUntil) ? r.snoozedUntil : null,
+          done: !!r.done,
+          createdAt: r.createdAt || Date.now()
+        }
+      }),
     notes: (Array.isArray(d.notes) ? d.notes : []).map((n) => ({
       id: n.id || uid('n'),
       text: typeof n.text === 'string' ? n.text : '',

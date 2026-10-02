@@ -63,7 +63,7 @@ function CredentialForm({ initial, security, onSave, onClose }) {
         if (!isValidPin(pin)) return setError('Enter your security key to protect this password.')
         const ctx = await unlock(pin, security)
         if (!ctx) return setError('Incorrect security key.')
-        const fresh = await createSecurity(pin)
+        const { security: fresh } = await createSecurity(pin, { recovery: false })
         const plain = password || (initial?.protected ? await decryptPassword(ctx, initial.enc) : '')
         const box = await encryptPassword(fresh, plain)
         onSave({ ...base, protected: true, password: '', enc: box }, { ctx, fresh })
@@ -290,7 +290,7 @@ function CredentialCard({ c, security, copied, onCopy, onEdit, onDelete, askPin 
           className="min-w-0 flex-1 truncate py-1.5 font-mono text-sm"
           aria-label={revealed !== null ? 'Password' : 'Password hidden'}
         >
-          {noPassword ? <span className="text-muted">No password</span> : revealed !== null ? revealed : '••••••••••'}
+          {noPassword ? <span className="text-muted">{c.lost ? 'Erased by key reset. Edit to add one.' : 'No password'}</span> : revealed !== null ? revealed : '••••••••••'}
         </span>
         {!noPassword && (
           <>

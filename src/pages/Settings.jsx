@@ -5,6 +5,7 @@ import { Icon } from '../lib/icons.jsx'
 import IconPicker from '../components/IconPicker.jsx'
 import { useConfirm } from '../components/ConfirmDialog.jsx'
 import SecurityKeySettings from '../components/SecurityKeySettings.jsx'
+import InstallApp from '../components/InstallApp.jsx'
 import { COLUMN_TYPES, STRIPE_THEMES, uid } from '../lib/store.js'
 
 function ColumnForm({ initial, onSubmit, onCancel }) {
@@ -148,6 +149,8 @@ export default function Settings() {
           ))}
         </div>
       </fieldset>
+
+      <InstallApp />
 
       <SecurityKeySettings />
 

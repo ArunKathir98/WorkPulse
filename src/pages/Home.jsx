@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { LayoutDashboard, StickyNote, BellRing } from 'lucide-react'
 import { useData } from '../context/DataContext.jsx'
 import Board from '../components/Board.jsx'
@@ -23,6 +23,16 @@ const readKind = () => {
 export default function Home() {
   const { data } = useData()
   const [kind, setKind] = useState(readKind)
+  const [params] = useSearchParams()
+  const tab = params.get('tab')
+
+  // Search results link here with ?tab=tasks|notes|reminders.
+  useEffect(() => {
+    if (tab === 'tasks' || tab === 'notes' || tab === 'reminders') {
+      setKind(tab)
+      try { localStorage.setItem(KEY, tab) } catch {}
+    }
+  }, [tab])
   const hasLists = data.settings.columns.some((c) => c.type === 'list')
 
   const choose = (k) => {

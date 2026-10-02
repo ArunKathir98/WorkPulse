@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
-  Plus, Copy, Check, Eye, EyeOff, Lock, Pencil, Trash2, ExternalLink, KeyRound, Loader2
+  Plus, Copy, Check, Eye, EyeOff, Lock, Pencil, Trash2, ExternalLink, KeyRound, Loader2, Search, X
 } from 'lucide-react'
 import { useData } from '../context/DataContext.jsx'
 import { uid } from '../lib/store.js'
@@ -200,7 +200,7 @@ function IconBtn({ label, onClick, children }) {
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted hover:bg-sunken hover:text-ink"
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted hover:bg-sunken hover:text-ink"
     >
       {children}
     </button>
@@ -250,66 +250,63 @@ function CredentialCard({ c, security, copied, onCopy, onEdit, onDelete, askPin 
   const noPassword = !c.protected && !c.password
 
   return (
-    <article className="card flex flex-col gap-3 p-4">
-      <header className="flex items-start gap-2">
-        <h2 className="min-w-0 flex-1 break-words font-display text-lg font-bold leading-snug">{c.name}</h2>
+    <article className="card flex flex-col gap-1.5 p-3">
+      <header className="flex items-center gap-1">
+        <h2 className="min-w-0 flex-1 truncate font-display text-base font-bold leading-tight" title={c.name}>{c.name}</h2>
         {c.protected && (
-          <span className="mt-1 inline-flex shrink-0 items-center gap-1 rounded-md bg-accent/10 px-1.5 py-0.5 text-xs font-semibold text-accent">
-            <Lock size={12} /> Protected
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-accent/10 px-1.5 py-0.5 text-[11px] font-semibold text-accent">
+            <Lock size={11} /> Protected
           </span>
         )}
+        <IconBtn label={`Edit ${c.name}`} onClick={onEdit}><Pencil size={14} /></IconBtn>
+        <IconBtn label={`Delete ${c.name}`} onClick={onDelete}><Trash2 size={14} className="text-danger" /></IconBtn>
       </header>
 
       {c.url && (
         <div className="flex items-center gap-1">
           {href ? (
-            <a href={href} target="_blank" rel="noopener noreferrer" className="flex min-w-0 flex-1 items-center gap-1.5 text-sm text-accent hover:underline">
-              <ExternalLink size={14} className="shrink-0" />
+            <a href={href} target="_blank" rel="noopener noreferrer" className="flex min-w-0 flex-1 items-center gap-1.5 text-[13px] text-accent hover:underline">
+              <ExternalLink size={12} className="shrink-0" />
               <span className="truncate">{c.url}</span>
             </a>
           ) : (
-            <span className="min-w-0 flex-1 truncate text-sm text-muted">{c.url}</span>
+            <span className="min-w-0 flex-1 truncate text-[13px] text-muted">{c.url}</span>
           )}
           <IconBtn label="Copy URL" onClick={() => onCopy(`${c.id}:url`, c.url)}>
-            {copied === `${c.id}:url` ? <Check size={15} className="text-accent" /> : <Copy size={15} />}
+            {copied === `${c.id}:url` ? <Check size={14} className="text-accent" /> : <Copy size={14} />}
           </IconBtn>
         </div>
       )}
 
       {c.username && (
         <div className="flex items-center gap-1">
-          <span className="min-w-0 flex-1 truncate text-sm">{c.username}</span>
+          <span className="min-w-0 flex-1 truncate text-[13px]">{c.username}</span>
           <IconBtn label="Copy username" onClick={() => onCopy(`${c.id}:user`, c.username)}>
-            {copied === `${c.id}:user` ? <Check size={15} className="text-accent" /> : <Copy size={15} />}
+            {copied === `${c.id}:user` ? <Check size={14} className="text-accent" /> : <Copy size={14} />}
           </IconBtn>
         </div>
       )}
 
-      <div className="flex items-center gap-1 rounded-lg border border-line bg-sunken px-3 py-1">
+      <div className="flex items-center gap-0.5 rounded-md border border-line bg-sunken pl-2.5 pr-1">
         <span
-          className="min-w-0 flex-1 truncate py-1.5 font-mono text-sm"
+          className="min-w-0 flex-1 truncate py-1 font-mono text-[13px]"
           aria-label={revealed !== null ? 'Password' : 'Password hidden'}
         >
-          {noPassword ? <span className="text-muted">{c.lost ? 'Erased by key reset. Edit to add one.' : 'No password'}</span> : revealed !== null ? revealed : '••••••••••'}
+          {noPassword ? <span className="text-muted">{c.lost ? 'Erased by key reset. Edit to add one.' : 'No password'}</span> : revealed !== null ? revealed : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
         </span>
         {!noPassword && (
           <>
             <IconBtn label={revealed !== null ? 'Hide password' : 'Show password'} onClick={toggle}>
-              {revealed !== null ? <EyeOff size={16} /> : <Eye size={16} />}
+              {revealed !== null ? <EyeOff size={15} /> : <Eye size={15} />}
             </IconBtn>
             <IconBtn label="Copy password" onClick={copyPw}>
-              {copied === `${c.id}:pw` ? <Check size={16} className="text-accent" /> : <Copy size={16} />}
+              {copied === `${c.id}:pw` ? <Check size={15} className="text-accent" /> : <Copy size={15} />}
             </IconBtn>
           </>
         )}
       </div>
 
-      {c.notes && <p className="whitespace-pre-wrap break-words text-sm text-muted">{c.notes}</p>}
-
-      <footer className="mt-auto flex justify-end gap-1 border-t border-line pt-2">
-        <button type="button" onClick={onEdit} className="btn h-8 px-2.5 text-sm"><Pencil size={14} /> Edit</button>
-        <button type="button" onClick={onDelete} className="btn btn-danger h-8 px-2.5 text-sm"><Trash2 size={14} /> Delete</button>
-      </footer>
+      {c.notes && <p className="line-clamp-2 whitespace-pre-wrap break-words text-xs text-muted" title={c.notes}>{c.notes}</p>}
     </article>
   )
 }
@@ -317,7 +314,19 @@ function CredentialCard({ c, security, copied, onCopy, onEdit, onDelete, askPin 
 export default function Credentials() {
   const { data, update } = useData()
   const security = data.settings.security || null
-  const list = data.credentials || []
+  const all = data.credentials || []
+  const [params] = useSearchParams()
+  const [query, setQuery] = useState(params.get('q') || '')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchRef = useRef(null)
+  // Keywords all have to match. Passwords are never searched, only what is visible on the card.
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+  const list = words.length
+    ? all.filter((c) => {
+        const hay = `${c.name} ${c.url} ${c.username} ${c.notes}`.toLowerCase()
+        return words.every((w) => hay.includes(w))
+      })
+    : all
   const [form, setForm] = useState(null) // { initial }
   const [copied, setCopied] = useState('')
   const [copyError, setCopyError] = useState(false)
@@ -372,13 +381,56 @@ export default function Credentials() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] space-y-4 px-3 py-4 md:px-4">
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="mx-auto w-full max-w-[1200px] space-y-3 px-3 py-4 md:px-4">
+      <div className="flex items-center gap-2">
         <h1 className="font-display text-2xl font-bold">Credentials</h1>
-        <button type="button" className="btn btn-primary ml-auto" onClick={() => setForm({ initial: null })}>
-          <Plus size={16} /> Add
-        </button>
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {all.length > 0 &&
+            (searchOpen || query ? (
+              <div className="relative w-full min-w-0 max-w-[16rem]">
+                <Search size={15} className="pointer-events-none absolute left-2.5 top-[13px] text-muted" />
+                <input
+                  ref={searchRef}
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Escape' && (setQuery(''), setSearchOpen(false))}
+                  placeholder="Search credentials"
+                  aria-label="Search credentials"
+                  autoComplete="off"
+                  className="field h-10 pl-8 pr-8 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setQuery(''); setSearchOpen(false) }}
+                  aria-label="Close search"
+                  className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-md text-muted hover:text-ink"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setSearchOpen(true); setTimeout(() => searchRef.current?.focus(), 0) }}
+                aria-label="Search credentials"
+                title="Search credentials"
+                className="btn h-10 w-10 px-0"
+              >
+                <Search size={17} />
+              </button>
+            ))}
+          <button type="button" className="btn btn-primary shrink-0" onClick={() => setForm({ initial: null })}>
+            <Plus size={16} /> Add
+          </button>
+        </div>
       </div>
+
+      {words.length > 0 && (
+        <p role="status" className="-mt-2 text-xs text-muted">
+          {list.length} of {all.length} credential{all.length === 1 ? '' : 's'}. Passwords are not searched.
+        </p>
+      )}
 
       {copyError && (
         <p role="alert" className="rounded-lg border border-line bg-danger/10 px-3 py-2 text-sm text-danger">
@@ -386,14 +438,20 @@ export default function Credentials() {
         </p>
       )}
 
-      {list.length === 0 ? (
+      {all.length > 0 && list.length === 0 ? (
+        <div className="card mx-auto mt-8 max-w-md space-y-2 p-6 text-center">
+          <Search className="mx-auto text-muted" size={28} />
+          <p className="font-display text-lg font-bold">No matches</p>
+          <p className="text-sm text-muted">Nothing matches "{query.trim()}". Try fewer or different words.</p>
+        </div>
+      ) : list.length === 0 ? (
         <div className="card mx-auto mt-8 max-w-md space-y-2 p-6 text-center">
           <KeyRound className="mx-auto text-muted" size={28} />
           <p className="font-display text-lg font-bold">No credentials yet</p>
           <p className="text-sm text-muted">Use Add to save a site login. Passwords can be locked behind your security key.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,19rem),1fr))] items-start gap-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] items-start gap-2.5">
           {list.map((c) => (
             <CredentialCard
               key={c.id}

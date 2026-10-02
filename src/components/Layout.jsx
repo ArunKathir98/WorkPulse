@@ -5,6 +5,8 @@ import { useData } from '../context/DataContext.jsx'
 import Avatar from './Avatar.jsx'
 import { HeaderQuote } from './DailyQuote.jsx'
 import ReminderEngine from './ReminderEngine.jsx'
+import ChatBot from './ChatBot.jsx'
+import GlobalSearch from './GlobalSearch.jsx'
 
 const nav = [
   { to: '/', label: 'Board', icon: LayoutDashboard, end: true },
@@ -68,6 +70,7 @@ export default function Layout() {
           </nav>
           <div className="ml-auto flex items-center gap-4">
             <HeaderQuote />
+            <GlobalSearch />
             <SaveStatus />
             <Link to="/profile" aria-label="Profile" className="hidden md:block"><Avatar /></Link>
           </div>
@@ -91,6 +94,7 @@ export default function Layout() {
 
       <main className="flex min-h-0 flex-1 flex-col overflow-y-auto"><Outlet /></main>
       <ReminderEngine />
+      <ChatBot />
 
       <nav
         aria-label="Main"

@@ -41,7 +41,7 @@ export default function Home() {
   }
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-3 py-3 md:px-4">
+    <div className="mx-auto flex w-full max-w-[1600px] flex-col px-3 py-3 md:min-h-0 md:flex-1 md:px-4">
       <DailyQuote />
 
       <div role="tablist" aria-label="Board type" className="mb-3 flex shrink-0 gap-1 border-b border-line">

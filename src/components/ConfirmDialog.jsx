@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
 
@@ -11,9 +12,9 @@ export function ConfirmDialog({ title, message, confirmLabel = 'Delete', danger 
     return () => window.removeEventListener('keydown', onKey)
   }, [onCancel])
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[60] grid place-items-end bg-ink/40 p-0 sm:place-items-center sm:p-4"
+      className="fixed inset-0 z-[60] grid place-items-center bg-ink/40 p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onCancel()}
     >
       <div
@@ -21,7 +22,7 @@ export function ConfirmDialog({ title, message, confirmLabel = 'Delete', danger 
         aria-modal="true"
         aria-labelledby="confirm-title"
         aria-describedby="confirm-message"
-        className="card w-full max-w-sm space-y-4 rounded-b-none p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-b-xl"
+        className="card max-h-[calc(100dvh-2rem)] w-full max-w-sm space-y-4 overflow-y-auto rounded-xl p-5 shadow-2xl"
       >
         <div className="flex items-start gap-3">
           {danger && (
@@ -45,7 +46,8 @@ export function ConfirmDialog({ title, message, confirmLabel = 'Delete', danger 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

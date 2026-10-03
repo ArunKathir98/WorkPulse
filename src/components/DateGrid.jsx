@@ -7,7 +7,7 @@ import { SortableContext, verticalListSortingStrategy, arrayMove, sortableKeyboa
 import { Plus, X, CalendarPlus, ChevronLeft, ChevronRight, ChevronsLeftRight, ChevronsRightLeft } from 'lucide-react'
 import { useData } from '../context/DataContext.jsx'
 import { Icon } from '../lib/icons.jsx'
-import { uid, STRIPE_THEMES } from '../lib/store.js'
+import { uid, STRIPE_THEMES, tint } from '../lib/store.js'
 import TaskDialog from './TaskDialog.jsx'
 import { useConfirm } from './ConfirmDialog.jsx'
 import { CardBody, TaskCard, cls } from './Cards.jsx'
@@ -130,10 +130,15 @@ function Row({ row, rowIdx, stripe, listCols, items, fieldCols, onEdit, onAdd, o
   const virtual = !!row.virtual
   const readOnly = virtual && row.date < todayStr()
   const day = row.id
-  const rowTint = stripe?.row && rowIdx % 2 === 1 ? `rgb(${stripe.row} / 0.14)` : null
+  const rowTint = stripe?.row && rowIdx % 2 === 1 ? `linear-gradient(90deg, ${tint(stripe.row, 0.17)}, ${tint(stripe.row, 0.05)})` : null
+  const hue = stripe ? (rowIdx % 2 === 1 ? stripe.row : stripe.col) : null
   const headerEl = (
       <div
-        style={rowTint ? { backgroundImage: `linear-gradient(${rowTint}, ${rowTint})` } : undefined}
+        style={
+          hue && day
+            ? { backgroundImage: `linear-gradient(${tint(hue, 0.17)}, ${tint(hue, 0.07)})`, boxShadow: `inset 4px 0 0 ${tint(hue, 0.9)}` }
+            : undefined
+        }
         className={
           mobile
             ? 'relative flex items-start justify-between gap-1 border-b border-line bg-sunken p-3'
@@ -181,8 +186,8 @@ function Row({ row, rowIdx, stripe, listCols, items, fieldCols, onEdit, onAdd, o
       </div>
   )
   const cellEls = listCols.map((col, ci) => {
-        const colTint = stripe?.col && ci % 2 === 1 ? `rgb(${stripe.col} / 0.12)` : null
-        const layers = [rowTint, colTint].filter(Boolean).map((c) => `linear-gradient(${c}, ${c})`)
+        const colTint = stripe?.col && ci % 2 === 1 ? `linear-gradient(180deg, ${tint(stripe.col, 0.13)}, ${tint(stripe.col, 0.04)})` : null
+        const layers = [rowTint, colTint].filter(Boolean)
         return (
         <Cell
           tint={layers.length ? { backgroundImage: layers.join(', ') } : undefined}
@@ -215,7 +220,10 @@ function Row({ row, rowIdx, stripe, listCols, items, fieldCols, onEdit, onAdd, o
       {headerEl}
       {listCols.map((col, ci) => (
         <div key={col.id}>
-          <div className="flex items-center gap-2 border-b border-line bg-sunken/60 px-3 py-1.5">
+          <div
+            style={stripe ? { backgroundImage: `linear-gradient(${tint(ci % 2 === 1 ? stripe.col : stripe.row, 0.15)}, ${tint(ci % 2 === 1 ? stripe.col : stripe.row, 0.15)})`, boxShadow: `inset 0 -2px 0 ${tint(ci % 2 === 1 ? stripe.col : stripe.row, 0.7)}` } : undefined}
+            className="flex items-center gap-2 border-b border-line bg-sunken/60 px-3 py-1.5"
+          >
             <Icon name={col.icon} size={15} className="shrink-0 text-accent" />
             <span className="truncate text-sm font-bold">{col.title}</span>
             <span className="text-xs tabular-nums text-muted">{items.filter((i) => i.columnId === col.id).length}</span>
@@ -447,7 +455,7 @@ export default function DateGrid({ dateCol }) {
     }))
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex flex-col md:min-h-0 md:flex-1">
       <div className="flex shrink-0 flex-wrap items-center gap-2 pb-3">
         <div role="group" aria-label="Board view" className="flex rounded-lg border border-line bg-surface p-0.5">
           {VIEWS.map((v) => (
@@ -508,7 +516,7 @@ export default function DateGrid({ dateCol }) {
         onDragCancel={() => setActive(null)}
       >
         {mobile ? (
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain">
+          <div className="space-y-3">
             {rowEls}
             {rows.length === 0 && (
               <p className="px-1 py-10 text-center text-sm text-muted">No dates in this month yet.</p>
@@ -517,17 +525,22 @@ export default function DateGrid({ dateCol }) {
         ) : (
         <div className="min-h-0 flex-1 overflow-auto overscroll-contain rounded-xl border border-line bg-surface">
           <div className="grid min-w-max" style={{ gridTemplateColumns: cols }}>
-            <div className="sticky left-0 top-0 z-30 flex h-12 items-center gap-2 border-b border-r border-line bg-sunken px-3">
+            <div
+              style={stripe ? { backgroundImage: `linear-gradient(${tint(stripe.row, 0.2)}, ${tint(stripe.row, 0.2)})`, boxShadow: `inset 0 -2px 0 ${tint(stripe.row, 0.75)}` } : undefined}
+              className="sticky left-0 top-0 z-30 flex h-12 items-center gap-2 border-b border-r border-line bg-sunken px-3"
+            >
               <Icon name={dateCol.icon} size={17} className="shrink-0 text-accent" />
               <span className="truncate font-display text-[15px] font-bold">{dateCol.title}</span>
             </div>
-            {listCols.map((col) => {
+            {listCols.map((col, ci) => {
+              const colHue = stripe ? (ci % 2 === 1 ? stripe.col : stripe.row) : null
               const collapsed = col.width === 'collapsed'
               const count = data.items.filter((i) => i.columnId === col.id).length
               const btn = 'grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted hover:bg-line/50 hover:text-ink'
               return (
                 <div
                   key={col.id}
+                  style={colHue ? { backgroundImage: `linear-gradient(${tint(colHue, 0.17)}, ${tint(colHue, 0.17)})`, boxShadow: `inset 0 -2px 0 ${tint(colHue, 0.75)}` } : undefined}
                   className={cls(
                     'sticky top-0 z-20 flex h-12 items-center border-b border-r border-line bg-sunken',
                     collapsed ? 'flex-col justify-center gap-0.5 px-0' : 'gap-1.5 px-3'

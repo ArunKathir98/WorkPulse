@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -137,7 +138,8 @@ export default function GlobalSearch() {
         <Search size={18} />
       </button>
 
-      {open && (
+      {open &&
+        createPortal(
         <div
           className="fixed inset-0 z-[65] grid place-items-start bg-ink/40 p-3 pt-[8vh] sm:place-items-start sm:justify-center"
           onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}
@@ -153,7 +155,7 @@ export default function GlobalSearch() {
                 placeholder="Search tasks, notes, reminders, credentials..."
                 aria-label="Search"
                 autoComplete="off"
-                className="h-12 min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted"
+                className="h-12 min-w-0 flex-1 bg-transparent outline-none focus-visible:outline-none placeholder:text-muted"
               />
               <button type="button" onClick={() => setOpen(false)} aria-label="Close search" className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted hover:bg-sunken hover:text-ink">
                 <X size={16} />
@@ -200,7 +202,8 @@ export default function GlobalSearch() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )

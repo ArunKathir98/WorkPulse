@@ -308,7 +308,7 @@ export default function ChatBot() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open assistant"
-          className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] right-3 z-[55] grid h-12 w-12 place-items-center rounded-full bg-accent text-accentink shadow-lg hover:bg-accent/90 md:bottom-5 md:right-5"
+          className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] right-3 z-40 grid h-12 w-12 place-items-center rounded-full bg-accent text-accentink shadow-lg hover:bg-accent/90 md:bottom-5 md:right-5"
         >
           <MessageCircle size={22} />
         </button>
@@ -318,7 +318,7 @@ export default function ChatBot() {
         <section
           role="dialog"
           aria-label="Assistant"
-          className="fixed inset-x-2 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-[55] flex h-[min(34rem,calc(100dvh-8rem))] flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-2xl md:inset-x-auto md:bottom-5 md:right-5 md:w-[24rem]"
+          className="fixed inset-x-2 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 flex h-[min(34rem,calc(100dvh-8rem))] flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-2xl md:inset-x-auto md:bottom-5 md:right-5 md:w-[24rem]"
         >
           <header className="flex shrink-0 items-center gap-2 border-b border-line bg-sunken px-3 py-2.5">
             <span className="grid h-8 w-8 place-items-center rounded-full bg-accent/15 text-accent"><Bot size={17} /></span>

@@ -6,7 +6,7 @@ import IconPicker from '../components/IconPicker.jsx'
 import { useConfirm } from '../components/ConfirmDialog.jsx'
 import SecurityKeySettings from '../components/SecurityKeySettings.jsx'
 import InstallApp from '../components/InstallApp.jsx'
-import { COLUMN_TYPES, STRIPE_THEMES, uid } from '../lib/store.js'
+import { COLUMN_TYPES, STRIPE_THEMES, tint, uid } from '../lib/store.js'
 
 function ColumnForm({ initial, onSubmit, onCancel }) {
   const editing = Boolean(initial)
@@ -134,14 +134,16 @@ export default function Settings() {
                 type="radio"
                 name="stripes"
                 value={t.value}
-                checked={(data.settings.stripes || 'ocean') === t.value}
+                checked={(data.settings.stripes || 'berry') === t.value}
                 onChange={() => update((d) => ({ ...d, settings: { ...d.settings, stripes: t.value } }))}
                 className="peer sr-only"
               />
               <span className="flex h-12 items-center gap-2.5 rounded-lg border border-line px-3 font-semibold peer-checked:border-accent peer-checked:bg-accent/10 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent">
-                <span className="flex overflow-hidden rounded border border-line">
-                  <span className="h-5 w-3.5" style={{ background: t.row ? `rgb(${t.row} / 0.55)` : 'transparent' }} />
-                  <span className="h-5 w-3.5" style={{ background: t.col ? `rgb(${t.col} / 0.55)` : 'transparent' }} />
+                <span className="grid h-7 w-9 shrink-0 grid-cols-2 grid-rows-2 overflow-hidden rounded-md border border-line" aria-hidden="true">
+                  <span style={{ background: t.row ? tint(t.row, 0.85) : 'transparent' }} />
+                  <span style={{ background: t.col ? tint(t.col, 0.85) : 'transparent' }} />
+                  <span style={{ background: t.col ? tint(t.col, 0.3) : 'transparent' }} />
+                  <span style={{ background: t.row ? tint(t.row, 0.3) : 'transparent' }} />
                 </span>
                 {t.label}
               </span>

@@ -156,16 +156,16 @@ export default function NotesBoard() {
   const activeNote = notes.find((n) => n.id === active)
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex flex-col md:min-h-0 md:flex-1">
       <div className="shrink-0 pb-3">
         <button type="button" onClick={addNote} className="btn btn-primary">
           <Plus size={16} /> Add note
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl border border-line bg-surface p-3">
+      <div className="rounded-xl border border-line bg-surface p-3 md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain">
         {notes.length === 0 ? (
-          <div className="grid h-full min-h-[40vh] place-items-center text-center">
+          <div className="grid h-full min-h-[30vh] place-items-center text-center">
             <div className="max-w-xs space-y-2">
               <StickyNote className="mx-auto text-muted" size={28} />
               <p className="font-display text-lg font-bold">No notes yet</p>

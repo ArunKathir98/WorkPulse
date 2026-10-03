@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Icon } from '../lib/icons.jsx'
@@ -18,9 +19,9 @@ export default function TaskDialog({ item, fieldCols, onSave, onDelete, onClose 
     if (canSave) onSave({ text: text.trim(), fields })
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 grid place-items-end bg-ink/40 p-0 sm:place-items-center sm:p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <form
@@ -28,7 +29,7 @@ export default function TaskDialog({ item, fieldCols, onSave, onDelete, onClose 
         role="dialog"
         aria-modal="true"
         aria-label="Edit task"
-        className="card w-full max-w-md space-y-4 rounded-b-none p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-b-xl"
+        className="card max-h-[calc(100dvh-2rem)] w-full max-w-md space-y-4 overflow-y-auto rounded-xl p-5 shadow-2xl"
       >
         <div>
           <label htmlFor="task-text" className="mb-1.5 block text-sm font-semibold">Task</label>
@@ -67,6 +68,7 @@ export default function TaskDialog({ item, fieldCols, onSave, onDelete, onClose 
           </div>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body
   )
 }

@@ -92,7 +92,7 @@ export default function Layout() {
         </div>
       )}
 
-      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto"><Outlet /></main>
+      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-16 md:pb-0"><Outlet /></main>
       <ReminderEngine />
       <ChatBot />
 

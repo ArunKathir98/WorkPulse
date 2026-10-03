@@ -3,25 +3,25 @@
 @tailwind utilities;
 
 :root {
-  --bg: 242 244 243;
+  --bg: 246 244 250;
   --surface: 255 255 255;
-  --sunken: 232 236 235;
-  --line: 212 220 218;
-  --ink: 20 33 31;
-  --muted: 95 113 110;
-  --accent: 14 143 134;
+  --sunken: 237 233 246;
+  --line: 221 214 236;
+  --ink: 28 22 45;
+  --muted: 108 100 133;
+  --accent: 124 58 237;
   --accent-ink: 255 255 255;
   --danger: 200 50 60;
 }
 .dark {
-  --bg: 15 22 21;
-  --surface: 23 34 32;
-  --sunken: 12 18 17;
-  --line: 39 55 58;
-  --ink: 231 239 237;
-  --muted: 143 165 161;
-  --accent: 57 197 184;
-  --accent-ink: 8 28 26;
+  --bg: 18 14 28;
+  --surface: 28 22 42;
+  --sunken: 14 10 22;
+  --line: 52 44 74;
+  --ink: 238 233 250;
+  --muted: 160 150 185;
+  --accent: 167 139 250;
+  --accent-ink: 24 14 48;
   --danger: 240 110 120;
   color-scheme: dark;
 }
@@ -32,6 +32,8 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 :focus-visible { outline: 2px solid rgb(var(--accent)); outline-offset: 2px; }
+.field:focus-visible { outline-offset: 0; }
+input[type='search']::-webkit-search-cancel-button { display: none; }
 input, textarea, select { font-size: 16px; } /* stops iOS zooming on focus */
 
 @layer components {
@@ -47,6 +49,53 @@ input, textarea, select { font-size: 16px; } /* stops iOS zooming on focus */
            focus:border-accent;
   }
   .card { @apply rounded-xl border border-line bg-surface; }
+}
+
+/* Landing page: animated 'high tech' backdrop (CSS only, no images) */
+.tech-bg {
+  background:
+    radial-gradient(1200px 700px at 12% -10%, rgba(124, 58, 237, 0.35), transparent 60%),
+    radial-gradient(900px 600px at 100% 8%, rgba(217, 70, 239, 0.2), transparent 55%),
+    linear-gradient(180deg, #0a0614 0%, #120a24 55%, #0a0614 100%);
+}
+.tech-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.38;
+  animation: tech-float 22s ease-in-out infinite alternate;
+}
+.tech-grid {
+  background-image:
+    linear-gradient(rgba(167, 139, 250, 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 139, 250, 0.22) 1px, transparent 1px);
+  background-size: 56px 56px;
+  transform: rotateX(62deg);
+  transform-origin: 50% 100%;
+  animation: tech-grid 5s linear infinite;
+  -webkit-mask-image: linear-gradient(to top, #000 15%, transparent 85%);
+  mask-image: linear-gradient(to top, #000 15%, transparent 85%);
+}
+.tech-star {
+  position: absolute;
+  border-radius: 9999px;
+  background: #c4b5fd;
+  box-shadow: 0 0 6px 1px rgba(196, 181, 253, 0.8);
+  animation: tech-twinkle 4s ease-in-out infinite;
+}
+.tech-vignette {
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(5, 2, 12, 0.65) 100%);
+}
+@keyframes tech-float {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(50px, -40px, 0) scale(1.15); }
+}
+@keyframes tech-grid {
+  to { background-position: 0 56px; }
+}
+@keyframes tech-twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.8); }
+  50% { opacity: 0.95; transform: scale(1.3); }
 }
 
 @media (prefers-reduced-motion: reduce) {

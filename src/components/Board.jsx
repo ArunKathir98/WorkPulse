@@ -4,7 +4,7 @@ import {
   closestCorners, closestCenter, useDroppable
 } from '@dnd-kit/core'
 import {
-  SortableContext, horizontalListSortingStrategy, verticalListSortingStrategy, useSortable,
+  SortableContext, rectSortingStrategy, verticalListSortingStrategy, useSortable,
   arrayMove, sortableKeyboardCoordinates
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -65,11 +65,13 @@ function Lane({ col, items, sort, onSort, fieldCols, onEdit, onAdd }) {
       style={{
         transform: CSS.Translate.toString(transform),
         transition,
-        flex: '1 0 min(80vw, 17rem)',
         minWidth: 0
       }}
       aria-label={col.title}
-      className={cls('flex flex-col border-r border-line last:border-r-0 snap-start', isDragging && 'opacity-40')}
+      className={cls(
+        'flex flex-col border-b border-line last:border-b-0 md:flex-[1_0_17rem] md:border-b-0 md:border-r md:last:border-r-0',
+        isDragging && 'opacity-40'
+      )}
     >
       <header className="flex h-12 items-center gap-1 border-b border-line bg-sunken px-1.5">
         <button
@@ -97,7 +99,7 @@ function Lane({ col, items, sort, onSort, fieldCols, onEdit, onAdd }) {
 
       <div
         ref={setDropRef}
-        className={cls('flex flex-1 flex-col gap-2 p-2 min-h-[42vh] transition-colors', isOver && 'bg-accent/5')}
+        className={cls('flex flex-1 flex-col gap-2 p-2 min-h-[8rem] md:min-h-[42vh] transition-colors', isOver && 'bg-accent/5')}
       >
         <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           {items.map((item) => (
@@ -232,9 +234,9 @@ function ListBoard() {
         onDragEnd={onDragEnd}
         onDragCancel={() => setActive(null)}
       >
-        <div className="overflow-x-auto rounded-xl border border-line bg-surface snap-x snap-proximity">
-          <SortableContext items={listCols.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
-            <div className="flex min-w-full">
+        <div className="rounded-xl border border-line bg-surface md:overflow-x-auto">
+          <SortableContext items={listCols.map((c) => c.id)} strategy={rectSortingStrategy}>
+            <div className="flex min-w-full flex-col md:flex-row">
               {listCols.map((col) => (
                 <Lane
                   key={col.id}

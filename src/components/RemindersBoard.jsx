@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useState } from 'react'
 import { Plus, Bell, BellOff, BellRing, Pencil, Trash2, Check, AlarmClockOff, Undo2 } from 'lucide-react'
 import { useData } from '../context/DataContext.jsx'
@@ -55,9 +56,9 @@ function ReminderForm({ initial, onSave, onClose }) {
     })
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 grid place-items-end bg-ink/40 p-0 sm:place-items-center sm:p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <form
@@ -65,7 +66,7 @@ function ReminderForm({ initial, onSave, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-label={initial ? 'Edit reminder' : 'Add reminder'}
-        className="card max-h-[92dvh] w-full max-w-md space-y-4 overflow-y-auto rounded-b-none p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-b-xl"
+        className="card max-h-[calc(100dvh-2rem)] w-full max-w-md space-y-4 overflow-y-auto rounded-xl p-5 shadow-2xl"
       >
         <h2 className="font-display text-xl font-bold">{initial ? 'Edit reminder' : 'Add reminder'}</h2>
 
@@ -115,7 +116,8 @@ function ReminderForm({ initial, onSave, onClose }) {
           <button type="submit" className="btn btn-primary">Save</button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -193,7 +195,7 @@ export default function RemindersBoard() {
   })
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex flex-col md:min-h-0 md:flex-1">
       <NotificationBar />
 
       <div className="shrink-0 pb-3">
@@ -202,9 +204,9 @@ export default function RemindersBoard() {
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl border border-line bg-surface p-3">
+      <div className="rounded-xl border border-line bg-surface p-3 md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain">
         {sorted.length === 0 ? (
-          <div className="grid h-full min-h-[40vh] place-items-center text-center">
+          <div className="grid h-full min-h-[30vh] place-items-center text-center">
             <div className="max-w-xs space-y-2">
               <BellRing className="mx-auto text-muted" size={28} />
               <p className="font-display text-lg font-bold">No reminders yet</p>

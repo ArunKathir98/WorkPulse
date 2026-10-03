@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
@@ -85,9 +86,9 @@ function CredentialForm({ initial, security, onSave, onClose }) {
     }
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 grid place-items-end bg-ink/40 p-0 sm:place-items-center sm:p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <form
@@ -95,7 +96,7 @@ function CredentialForm({ initial, security, onSave, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-label={editing ? 'Edit credential' : 'Add credential'}
-        className="card max-h-[92dvh] w-full max-w-md space-y-4 overflow-y-auto rounded-b-none p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-b-xl"
+        className="card max-h-[calc(100dvh-2rem)] w-full max-w-md space-y-4 overflow-y-auto rounded-xl p-5 shadow-2xl"
       >
         <h2 className="font-display text-xl font-bold">{editing ? 'Edit credential' : 'Add credential'}</h2>
 
@@ -189,7 +190,8 @@ function CredentialForm({ initial, security, onSave, onClose }) {
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -385,49 +387,51 @@ export default function Credentials() {
       <div className="flex items-center gap-2">
         <h1 className="font-display text-2xl font-bold">Credentials</h1>
         <div className="ml-auto flex min-w-0 items-center gap-2">
-          {all.length > 0 &&
-            (searchOpen || query ? (
-              <div className="relative w-full min-w-0 max-w-[16rem]">
-                <Search size={15} className="pointer-events-none absolute left-2.5 top-[13px] text-muted" />
-                <input
-                  ref={searchRef}
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Escape' && (setQuery(''), setSearchOpen(false))}
-                  placeholder="Search credentials"
-                  aria-label="Search credentials"
-                  autoComplete="off"
-                  className="field h-10 pl-8 pr-8 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => { setQuery(''); setSearchOpen(false) }}
-                  aria-label="Close search"
-                  className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-md text-muted hover:text-ink"
-                >
-                  <X size={15} />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => { setSearchOpen(true); setTimeout(() => searchRef.current?.focus(), 0) }}
-                aria-label="Search credentials"
-                title="Search credentials"
-                className="btn h-10 w-10 px-0"
-              >
-                <Search size={17} />
-              </button>
-            ))}
+          {all.length > 0 && !(searchOpen || query) && (
+            <button
+              type="button"
+              onClick={() => { setSearchOpen(true); setTimeout(() => searchRef.current?.focus(), 0) }}
+              aria-label="Search credentials"
+              title="Search credentials"
+              className="btn h-10 w-10 px-0"
+            >
+              <Search size={17} />
+            </button>
+          )}
           <button type="button" className="btn btn-primary shrink-0" onClick={() => setForm({ initial: null })}>
             <Plus size={16} /> Add
           </button>
         </div>
       </div>
 
+      {all.length > 0 && (searchOpen || query) && (
+        <div className="relative">
+          <Search size={15} className="pointer-events-none absolute left-3 top-[13px] text-muted" />
+          <input
+            ref={searchRef}
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Escape' && (setQuery(''), setSearchOpen(false))}
+            placeholder="Search by name, URL, username or notes"
+            aria-label="Search credentials"
+            autoComplete="off"
+            autoFocus
+            className="field h-10 pl-9 pr-9 text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => { setQuery(''); setSearchOpen(false) }}
+            aria-label="Close search"
+            className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-md text-muted hover:text-ink"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
+
       {words.length > 0 && (
-        <p role="status" className="-mt-2 text-xs text-muted">
+        <p role="status" className="text-xs text-muted">
           {list.length} of {all.length} credential{all.length === 1 ? '' : 's'}. Passwords are not searched.
         </p>
       )}

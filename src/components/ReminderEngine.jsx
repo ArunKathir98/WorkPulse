@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState } from 'react'
 import { BellRing } from 'lucide-react'
 import { useData } from '../context/DataContext.jsx'
@@ -84,14 +85,14 @@ export default function ReminderEngine() {
   const patch = (p) =>
     update((d) => ({ ...d, reminders: (d.reminders || []).map((r) => (r.id === reminder.id ? { ...r, ...p } : r)) }))
 
-  return (
-    <div className="fixed inset-0 z-[80] grid place-items-end bg-ink/40 p-0 sm:place-items-center sm:p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[80] grid place-items-center bg-ink/40 p-4">
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="rem-title"
         aria-describedby="rem-body"
-        className="card w-full max-w-sm space-y-4 rounded-b-none p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-b-xl"
+        className="card max-h-[calc(100dvh-2rem)] w-full max-w-sm space-y-4 overflow-y-auto rounded-xl p-5 shadow-2xl"
       >
         <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent/15 text-accent">
@@ -141,6 +142,7 @@ export default function ReminderEngine() {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

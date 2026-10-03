@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useState } from 'react'
 import { KeyRound, Loader2, Copy, Check, LifeBuoy, TriangleAlert } from 'lucide-react'
 import { useData } from '../context/DataContext.jsx'
@@ -40,13 +41,13 @@ function RecoveryCodeDialog({ code, onClose }) {
       // The code is on screen to copy by hand.
     }
   }
-  return (
-    <div className="fixed inset-0 z-[70] grid place-items-end bg-ink/40 p-0 sm:place-items-center sm:p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-ink/40 p-4">
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="rc-title"
-        className="card w-full max-w-md space-y-4 rounded-b-none p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-b-xl"
+        className="card max-h-[calc(100dvh-2rem)] w-full max-w-md space-y-4 overflow-y-auto rounded-xl p-5 shadow-2xl"
       >
         <div className="flex items-start gap-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent/10 text-accent"><LifeBuoy size={18} /></span>
@@ -72,7 +73,8 @@ function RecoveryCodeDialog({ code, onClose }) {
           <button type="button" className="btn btn-primary" disabled={!saved} onClick={onClose}>Done</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

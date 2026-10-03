@@ -9,15 +9,22 @@ export const COLUMN_TYPES = [
   { value: 'number', label: 'Number field', hint: 'A number on every task, e.g. estimate' }
 ]
 
-// Tints for alternate rows (dates) and alternate list columns in the date grid.
+// Grid palettes. Each pairs two hues: `row` tints the date rows and `col` the list columns, and the two
+// alternate across the headers and the date accent bars. Saved ids stay the same as older versions.
 export const STRIPE_THEMES = [
   { value: 'none', label: 'None', row: null, col: null },
-  { value: 'ocean', label: 'Ocean', row: '56 140 230', col: '14 160 150' },
-  { value: 'forest', label: 'Forest', row: '70 160 90', col: '170 160 60' },
-  { value: 'sunset', label: 'Sunset', row: '240 140 60', col: '230 80 110' },
-  { value: 'berry', label: 'Berry', row: '150 90 220', col: '225 90 170' },
-  { value: 'slate', label: 'Slate', row: '120 130 145', col: '90 110 140' }
+  { value: 'berry', label: 'Orchid', row: '139 92 246', col: '236 72 153' }, // violet + pink
+  { value: 'aurora', label: 'Aurora', row: '124 58 237', col: '6 182 212' }, // violet + cyan
+  { value: 'ocean', label: 'Lagoon', row: '13 148 136', col: '79 70 229' }, // teal + indigo
+  { value: 'midnight', label: 'Midnight', row: '59 130 246', col: '139 92 246' }, // blue + violet
+  { value: 'forest', label: 'Meadow', row: '16 185 129', col: '245 158 11' }, // emerald + amber
+  { value: 'sunset', label: 'Ember', row: '249 115 22', col: '225 29 72' }, // orange + rose
+  { value: 'citrus', label: 'Citrus', row: '132 204 22', col: '234 179 8' }, // lime + gold
+  { value: 'slate', label: 'Graphite', row: '100 116 139', col: '59 130 246' } // slate + steel blue
 ]
+
+// rgb token + alpha -> css colour
+export const tint = (rgb, a) => `rgb(${rgb} / ${a})`
 
 // Sticky-note paper colors (shown the same in light and dark mode).
 export const NOTE_COLORS = [
@@ -35,7 +42,7 @@ export function defaultData() {
     version: 1,
     settings: {
       theme: getStoredTheme(),
-      stripes: 'ocean',
+      stripes: 'berry',
       columns: [
         { id: todo, title: 'To do', icon: 'ListTodo', type: 'list' },
         { id: doing, title: 'In progress', icon: 'Clock', type: 'list' },

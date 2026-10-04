@@ -1,11 +1,12 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useState } from 'react'
-import { Plus, Bell, BellOff, BellRing, Pencil, Trash2, Check, AlarmClockOff, Undo2 } from 'lucide-react'
+import { Plus, Bell, BellOff, BellRing, Pencil, Trash2, Check, AlarmClockOff, Undo2, Repeat } from 'lucide-react'
 import { useData } from '../context/DataContext.jsx'
 import { uid } from '../lib/store.js'
 import {
   OFFSETS, SNOOZES, snoozeLabel, offsetLabel, toTimestamp, dateInputValue, timeInputValue,
-  formatWhen, formatTime, firedFor, countdown, notificationsSupported
+  formatWhen, formatTime, firedFor, countdown, notificationsSupported,
+  WEEKDAYS, nextOccurrence, advanceReminder, describeRepeat
 } from '../lib/reminders.js'
 import { useConfirm } from './ConfirmDialog.jsx'
 import { cls } from './Cards.jsx'
@@ -27,6 +28,13 @@ function ReminderForm({ initial, onSave, onClose }) {
   const [offsets, setOffsets] = useState(initial?.offsets || [0])
   const [notes, setNotes] = useState(initial?.notes || '')
   const [error, setError] = useState('')
+  const r0 = initial?.repeat
+  const [repeat, setRepeat] = useState(!!r0)
+  const [freq, setFreq] = useState(r0?.type || 'daily')
+  const [days, setDays] = useState(r0?.days?.length ? r0.days : [new Date(start).getDay()])
+  const [dom, setDom] = useState(r0?.dom || new Date(start).getDate())
+  const [endMode, setEndMode] = useState(r0 && !r0.until ? 'never' : 'date')
+  const [until, setUntil] = useState(r0?.until || '')
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -36,13 +44,34 @@ function ReminderForm({ initial, onSave, onClose }) {
 
   const toggle = (v) => setOffsets((o) => (o.includes(v) ? o.filter((x) => x !== v) : [...o, v].sort((a, b) => a - b)))
 
+  const toggleDay = (v) => setDays((d) => (d.includes(v) ? d.filter((x) => x !== v) : [...d, v]))
+
   const submit = (e) => {
     e.preventDefault()
     if (!title.trim()) return setError('Give the reminder a title.')
     if (!date || !time) return setError('Choose a date and a time.')
     if (!offsets.length) return setError('Choose when to remind you: on time, 5 or 10 minutes before.')
-    const at = toTimestamp(date, time)
-    if (!(at > Date.now())) return setError('Pick a date and time in the future.')
+    let at = toTimestamp(date, time)
+    let rep = null
+    if (repeat) {
+      if (freq === 'weekly' && !days.length) return setError('Choose at least one day of the week.')
+      const d = Math.round(Number(dom))
+      if (freq === 'monthly' && !(d >= 1 && d <= 31)) return setError('Enter a day of the month from 1 to 31.')
+      if (endMode === 'date') {
+        if (!until) return setError('Choose the date this reminder should repeat until, or pick "No end date".')
+        if (until < date) return setError('The end date is before the start date.')
+      }
+      rep = {
+        type: freq,
+        days: freq === 'weekly' ? [...days].sort((a, b) => a - b) : [],
+        dom: freq === 'monthly' ? d : 1,
+        until: endMode === 'date' ? until : null
+      }
+      const [h, m] = time.split(':').map(Number)
+      // The first occurrence is the first match on or after the start date that is still in the future.
+      at = nextOccurrence(rep, Math.max(at - 1, Date.now()), h, m)
+      if (at == null) return setError('No reminder falls between now and the end date. Check the days and the end date.')
+    } else if (!(at > Date.now())) return setError('Pick a date and time in the future.')
     onSave({
       id: initial?.id || uid('r'),
       createdAt: initial?.createdAt || Date.now(),
@@ -52,7 +81,8 @@ function ReminderForm({ initial, onSave, onClose }) {
       offsets,
       fired: firedFor(at, offsets),
       snoozedUntil: null,
-      done: false
+      done: false,
+      repeat: rep
     })
   }
 
@@ -77,13 +107,74 @@ function ReminderForm({ initial, onSave, onClose }) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="r-date" className="mb-1.5 block text-sm font-semibold">Date</label>
+            <label htmlFor="r-date" className="mb-1.5 block text-sm font-semibold">{repeat ? 'Starts on' : 'Date'}</label>
             <input id="r-date" type="date" className="field" min={dateInputValue(Date.now())} value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div>
             <label htmlFor="r-time" className="mb-1.5 block text-sm font-semibold">Time</label>
             <input id="r-time" type="time" className="field" value={time} onChange={(e) => setTime(e.target.value)} />
           </div>
+        </div>
+
+        <div className="space-y-3 rounded-lg border border-line p-3">
+          <label className="flex cursor-pointer items-center gap-2.5">
+            <input type="checkbox" checked={repeat} onChange={(e) => setRepeat(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--accent))]" />
+            <span className="flex items-center gap-1.5 text-sm font-semibold"><Repeat size={14} className="text-accent" /> Repeat</span>
+          </label>
+
+          {repeat && (
+            <div className="space-y-3">
+              <div>
+                <label htmlFor="r-freq" className="mb-1.5 block text-xs font-semibold text-muted">How often</label>
+                <select id="r-freq" className="field" value={freq} onChange={(e) => setFreq(e.target.value)}>
+                  <option value="daily">Every day</option>
+                  <option value="weekly">Specific days of the week</option>
+                  <option value="monthly">A specific day of the month</option>
+                </select>
+              </div>
+
+              {freq === 'weekly' && (
+                <fieldset>
+                  <legend className="mb-1.5 text-xs font-semibold text-muted">On these days</legend>
+                  <div className="flex flex-wrap gap-1.5">
+                    {WEEKDAYS.map((w) => (
+                      <label key={w.value} className="cursor-pointer">
+                        <input type="checkbox" checked={days.includes(w.value)} onChange={() => toggleDay(w.value)} className="peer sr-only" aria-label={w.long} />
+                        <span className="grid h-9 min-w-[2.6rem] place-items-center rounded-lg border border-line px-2 text-sm font-semibold text-muted peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accentink peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent">
+                          {w.short}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
+
+              {freq === 'monthly' && (
+                <div>
+                  <label htmlFor="r-dom" className="mb-1.5 block text-xs font-semibold text-muted">Day of the month</label>
+                  <input id="r-dom" type="number" min={1} max={31} inputMode="numeric" className="field w-28" value={dom} onChange={(e) => setDom(e.target.value)} />
+                  {Number(dom) > 28 && <p className="mt-1 text-xs text-muted">In shorter months it falls on the last day of the month.</p>}
+                </div>
+              )}
+
+              <fieldset>
+                <legend className="mb-1.5 text-xs font-semibold text-muted">Repeat until</legend>
+                <div className="space-y-1.5">
+                  <label className="flex cursor-pointer items-center gap-2.5">
+                    <input type="radio" name="r-end" checked={endMode === 'date'} onChange={() => setEndMode('date')} className="h-4 w-4 accent-[rgb(var(--accent))]" />
+                    <span className="text-sm font-semibold">A specific date</span>
+                  </label>
+                  {endMode === 'date' && (
+                    <input type="date" aria-label="Repeat until" className="field ml-6 w-auto" min={date} value={until} onChange={(e) => setUntil(e.target.value)} />
+                  )}
+                  <label className="flex cursor-pointer items-center gap-2.5">
+                    <input type="radio" name="r-end" checked={endMode === 'never'} onChange={() => setEndMode('never')} className="h-4 w-4 accent-[rgb(var(--accent))]" />
+                    <span className="text-sm font-semibold">No end date</span>
+                  </label>
+                </div>
+              </fieldset>
+            </div>
+          )}
         </div>
 
         <fieldset>
@@ -177,6 +268,14 @@ export default function RemindersBoard() {
     setForm(null)
   }
 
+  // A repeating reminder is finished for this time only: it moves to its next date. One-offs just complete.
+  const markDone = (r) => {
+    if (!r.repeat) return patch(r.id, { done: true, snoozedUntil: null })
+    const next = advanceReminder(r, Date.now())
+    if (next == null) return patch(r.id, { done: true, snoozedUntil: null, repeat: null })
+    patch(r.id, { at: next, fired: firedFor(next, r.offsets), snoozedUntil: null })
+  }
+
   const remove = async (r) => {
     const ok = await confirm({
       title: `Delete "${r.title}"?`,
@@ -225,6 +324,11 @@ export default function RemindersBoard() {
                     <span className={cls('shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold', TONES[st.tone])}>{st.label}</span>
                   </div>
                   <p className="text-sm">{formatWhen(r.at)}</p>
+                  {r.repeat && (
+                    <p className="flex items-center gap-1.5 text-xs font-semibold text-accent">
+                      <Repeat size={13} /> {describeRepeat(r.repeat)}
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-1.5">
                     {r.offsets.map((o) => (
                       <span key={o} className="rounded-md bg-sunken px-1.5 py-0.5 text-xs text-muted">{offsetLabel(o)}</span>
@@ -254,7 +358,7 @@ export default function RemindersBoard() {
                         <Undo2 size={14} /> Undo
                       </button>
                     ) : (
-                      <button type="button" className="btn h-8 px-2.5 text-sm" onClick={() => patch(r.id, { done: true, snoozedUntil: null })}>
+                      <button type="button" className="btn h-8 px-2.5 text-sm" onClick={() => markDone(r)} title={r.repeat ? 'Done for this time. It will remind you again on the next date.' : undefined}>
                         <Check size={14} /> Done
                       </button>
                     )}

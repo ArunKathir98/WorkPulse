@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState } from 'react'
 import { BellRing } from 'lucide-react'
 import { useData } from '../context/DataContext.jsx'
-import { SNOOZES, snoozeLabel, formatWhen, showSystemNotification } from '../lib/reminders.js'
+import { SNOOZES, snoozeLabel, formatWhen, showSystemNotification, advanceReminder, firedFor } from '../lib/reminders.js'
 
 const TICK_MS = 10000
 
@@ -32,16 +32,29 @@ export default function ReminderEngine() {
           continue
         }
         const due = r.offsets.filter((o) => !r.fired?.[o] && now >= r.at - o * 60000)
-        if (!due.length) continue
-        const fired = { ...r.fired }
-        due.forEach((o) => { fired[o] = true })
-        patches[r.id] = { fired }
-        const mins = Math.ceil((r.at - now) / 60000)
-        alerts.push({
-          key: `${r.id}:${due.join(',')}:${r.at}`,
-          id: r.id,
-          body: mins <= 0 ? "It's time." : `Starts in ${mins} minute${mins === 1 ? '' : 's'}.`
-        })
+        let patch = null
+        if (due.length) {
+          const fired = { ...r.fired }
+          due.forEach((o) => { fired[o] = true })
+          patch = { fired }
+          const mins = Math.ceil((r.at - now) / 60000)
+          alerts.push({
+            key: `${r.id}:${due.join(',')}:${r.at}`,
+            id: r.id,
+            at: r.at,
+            repeats: !!r.repeat,
+            body: mins <= 0 ? "It's time." : `Starts in ${mins} minute${mins === 1 ? '' : 's'}.`
+          })
+        }
+        // A repeating reminder moves on to its next occurrence once this one has come around.
+        if (r.repeat && now >= r.at) {
+          const next = advanceReminder(r, now)
+          // Past the end date: stay as a normal one-off until it is marked done, so the final alert is not lost.
+          patch = next
+            ? { at: next, fired: firedFor(next, r.offsets, now), snoozedUntil: null }
+            : { ...(patch || {}), repeat: null }
+        }
+        if (patch) patches[r.id] = patch
       }
 
       if (Object.keys(patches).length)
@@ -101,7 +114,7 @@ export default function ReminderEngine() {
           <div className="min-w-0">
             <h2 id="rem-title" className="break-words font-display text-lg font-bold">{reminder.title}</h2>
             <p id="rem-body" className="mt-0.5 text-sm text-muted">{current.body}</p>
-            <p className="text-xs text-muted">{formatWhen(reminder.at)}</p>
+            <p className="text-xs text-muted">{formatWhen(current.at ?? reminder.at)}</p>
             {reminder.notes && <p className="mt-2 whitespace-pre-wrap break-words text-sm">{reminder.notes}</p>}
             {queue.length > 1 && <p className="mt-2 text-xs font-semibold text-accent">{queue.length - 1} more waiting</p>}
           </div>
@@ -137,8 +150,8 @@ export default function ReminderEngine() {
           >
             Snooze {snoozeLabel(snooze)}
           </button>
-          <button type="button" className="btn btn-primary" onClick={() => { patch({ done: true }); next() }}>
-            Mark done
+          <button type="button" className="btn btn-primary" onClick={() => { patch({ done: true, snoozedUntil: null }); next() }}>
+            {current.repeats ? 'Stop repeating' : 'Mark done'}
           </button>
         </div>
       </div>

@@ -120,7 +120,17 @@ export function normalize(raw) {
       .filter((r) => Number.isFinite(r?.at))
       .map((r) => {
         const offsets = (Array.isArray(r.offsets) ? r.offsets : [0]).filter((o) => [0, 5, 10].includes(o))
+        const rp = r.repeat
+        let repeat = null
+        if (rp && ['daily', 'weekly', 'monthly'].includes(rp.type)) {
+          const days = Array.isArray(rp.days) ? [...new Set(rp.days.filter((n) => Number.isInteger(n) && n >= 0 && n <= 6))] : []
+          const dom = Math.min(31, Math.max(1, Math.round(Number(rp.dom)) || 1))
+          if (rp.type !== 'weekly' || days.length) {
+            repeat = { type: rp.type, days, dom, until: /^\d{4}-\d{2}-\d{2}$/.test(rp.until || '') ? rp.until : null }
+          }
+        }
         return {
+          repeat,
           id: r.id || uid('r'),
           title: String(r.title || ''),
           notes: String(r.notes || ''),

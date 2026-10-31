@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Pencil } from 'lucide-react'
+import { useRef } from 'react'
+import { GripVertical } from 'lucide-react'
 import { Icon } from '../lib/icons.jsx'
 import { formatField } from '../lib/store.js'
 
@@ -17,9 +18,10 @@ export function CardBody({ item, fieldCols, lifted }) {
         lifted && 'shadow-xl ring-2 ring-accent/40 rotate-1'
       )}
     >
-      <p className="whitespace-pre-wrap break-words pr-6">{item.text}</p>
+      {/* Text stays selectable: dragging is only from the grip, editing is by double-click. */}
+      <p className="cursor-text select-text whitespace-pre-wrap break-words pl-5 pr-2">{item.text}</p>
       {chips.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-2 flex flex-wrap gap-1.5 pl-5">
           {chips.map(({ fc, v }) => (
             <span
               key={fc.id}
@@ -37,28 +39,49 @@ export function CardBody({ item, fieldCols, lifted }) {
 }
 
 export function TaskCard({ item, fieldCols, onEdit }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
     data: { type: 'item' }
   })
+  // Touch screens have no reliable double-click, so two quick taps do the same thing.
+  const lastTap = useRef({ t: 0, x: 0, y: 0 })
+  const edit = () => {
+    window.getSelection()?.removeAllRanges() // the double-click also selected a word; drop it
+    onEdit(item.id)
+  }
+  const onPointerUp = (e) => {
+    if (e.pointerType !== 'touch' || e.target.closest('button')) return
+    const now = Date.now()
+    const l = lastTap.current
+    if (now - l.t < 350 && Math.hypot(e.clientX - l.x, e.clientY - l.y) < 30) {
+      lastTap.current = { t: 0, x: 0, y: 0 }
+      edit()
+    } else lastTap.current = { t: now, x: e.clientX, y: e.clientY }
+  }
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      {...attributes}
-      {...listeners}
-      onClick={() => onEdit(item.id)}
-      className={cls('group relative cursor-grab select-none [-webkit-touch-callout:none]', isDragging && 'opacity-30')}
+      role="group"
+      tabIndex={0}
+      aria-label={`Task: ${item.text}. Press Enter to edit.`}
+      title="Double-click to edit"
+      onDoubleClick={(e) => { if (!e.target.closest('button')) edit() }}
+      onPointerUp={onPointerUp}
+      onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) onEdit(item.id) }}
+      className={cls('group relative rounded-lg [touch-action:manipulation]', isDragging && 'opacity-30')}
     >
       <CardBody item={item} fieldCols={fieldCols} />
       <button
+        ref={setActivatorNodeRef}
         type="button"
-        aria-label={`Edit task: ${item.text}`}
-        onClick={(e) => { e.stopPropagation(); onEdit(item.id) }}
-        onPointerDown={(e) => e.stopPropagation()}
-        className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-md text-muted hover:bg-sunken hover:text-ink md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100"
+        {...attributes}
+        {...listeners}
+        aria-label={`Move task: ${item.text}`}
+        title="Drag to move"
+        className="absolute left-1 top-2 grid h-7 w-6 cursor-grab touch-none place-items-center rounded-md text-muted hover:bg-sunken hover:text-ink"
       >
-        <Pencil size={14} />
+        <GripVertical size={15} />
       </button>
     </div>
   )

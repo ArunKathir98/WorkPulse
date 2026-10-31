@@ -8,7 +8,7 @@ import {
   arrayMove, sortableKeyboardCoordinates
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, ArrowUpDown, ArrowDownAZ, ArrowUpAZ, Plus } from 'lucide-react'
+import { GripVertical, ArrowUpDown, ArrowDownAZ, ArrowUpAZ, SendHorizontal } from 'lucide-react'
 import { useData } from '../context/DataContext.jsx'
 import { Icon } from '../lib/icons.jsx'
 import { uid } from '../lib/store.js'
@@ -33,17 +33,25 @@ function AddTask({ onAdd, label }) {
     setText('')
   }
   return (
-    <form onSubmit={submit} className="flex items-center gap-1.5 pt-1">
+    <form onSubmit={submit} className="pt-1">
+     <div className="relative">
       <input
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Add a task"
         aria-label={`Add a task to ${label}`}
-        className="field h-9 bg-transparent"
+        className="field h-10 bg-transparent pr-12"
       />
-      <button type="submit" aria-label="Add task" className="btn h-9 w-9 shrink-0 px-0" disabled={!text.trim()}>
-        <Plus size={16} />
+      <button
+        type="submit"
+        aria-label={`Add task to ${label}`}
+        title="Send"
+        disabled={!text.trim()}
+        className="absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-accent text-accentink transition-opacity hover:bg-accent/90 disabled:bg-transparent disabled:text-muted disabled:opacity-60"
+      >
+        <SendHorizontal size={15} />
       </button>
+     </div>
     </form>
   )
 }

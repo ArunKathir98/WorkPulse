@@ -101,7 +101,6 @@ export default function ChatBot() {
     const list = target || listCols[0]
     let note = ''
     let ymd = p.ymd
-    if (ymd && ymd < parseWhen('today').ymd) return 'That date is in the past. Tasks can only be dated today or later.'
     if (ymd && !dateCol) { note = ' There is no Date column, so I left the date off.'; ymd = null }
     update((d) => {
       const dc = d.settings.columns.find((c) => c.type === 'date')

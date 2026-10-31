@@ -4,7 +4,7 @@ import {
   closestCorners, useDroppable
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
-import { Plus, X, CalendarPlus, ChevronLeft, ChevronRight, ChevronsLeftRight, ChevronsRightLeft } from 'lucide-react'
+import { SendHorizontal, X, CalendarPlus, ChevronLeft, ChevronRight, ChevronsLeftRight, ChevronsRightLeft } from 'lucide-react'
 import { useData } from '../context/DataContext.jsx'
 import { Icon } from '../lib/icons.jsx'
 import { uid, STRIPE_THEMES, tint } from '../lib/store.js'
@@ -49,10 +49,21 @@ const shiftMonth = (ym, n) => {
 const monthTitle = (ym) =>
   new Date(`${ym}-01T00:00:00`).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
 const VIEWS = [
-  { value: 'all', label: 'All' },
   { value: 'month', label: 'Month' },
+  { value: 'week', label: 'Week' },
   { value: 'day', label: 'Day' }
 ]
+// Weeks run Monday to Sunday.
+const weekStartOf = (ymd) => {
+  const d = new Date(`${ymd}T00:00:00`)
+  return shiftDay(ymd, -((d.getDay() + 6) % 7))
+}
+const weekTitle = (start) => {
+  const a = new Date(`${start}T00:00:00`)
+  const b = new Date(`${shiftDay(start, 6)}T00:00:00`)
+  const f = (d, withYear) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}) })
+  return `${f(a, a.getFullYear() !== b.getFullYear())} \u2013 ${f(b, true)}`
+}
 const cellId = (day, colId) => `${day}|${colId}`
 
 function rowTitle(row) {
@@ -73,23 +84,33 @@ function CellAdd({ onAdd, label }) {
     setText('')
   }
   return (
-    <form onSubmit={submit} className="mt-auto space-y-1.5 pt-1">
+    <form onSubmit={submit} className="mt-auto pt-1">
+     <div className="relative">
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
+        // Ctrl or Cmd + Enter adds; a plain Enter starts a new line for the next task.
+        onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submit(e) }}
         rows={2}
         placeholder="Add tasks, one per line"
         aria-label={`Add tasks to ${label}`}
-        className="field h-auto resize-none bg-transparent py-1.5 text-sm"
+        className="field block h-auto resize-none bg-transparent py-1.5 pr-12 text-sm"
       />
-      <button type="submit" className="btn h-8 w-full text-sm" disabled={!text.trim()}>
-        <Plus size={14} /> Add
+      <button
+        type="submit"
+        aria-label={`Add to ${label}`}
+        title="Send (Ctrl+Enter)"
+        disabled={!text.trim()}
+        className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-accent text-accentink transition-opacity hover:bg-accent/90 disabled:bg-transparent disabled:text-muted disabled:opacity-60"
+      >
+        <SendHorizontal size={16} />
       </button>
+     </div>
     </form>
   )
 }
 
-function Cell({ day, label, col, items, fieldCols, onEdit, onAdd, tint, collapsed, virtual, readOnly, compact }) {
+function Cell({ day, label, col, items, fieldCols, onEdit, onAdd, tint, collapsed, virtual, compact }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `cell:${cellId(day, col.id)}`,
     data: { type: 'cell', day, columnId: col.id },
@@ -121,14 +142,13 @@ function Cell({ day, label, col, items, fieldCols, onEdit, onAdd, tint, collapse
           <TaskCard key={item.id} item={item} fieldCols={fieldCols} onEdit={onEdit} />
         ))}
       </SortableContext>
-      {!readOnly && <CellAdd onAdd={onAdd} label={`${col.title}, ${label}`} />}
+      <CellAdd onAdd={onAdd} label={`${col.title}, ${label}`} />
     </div>
   )
 }
 
 function Row({ row, rowIdx, stripe, listCols, items, fieldCols, onEdit, onAdd, onRemove, onDate, mobile }) {
   const virtual = !!row.virtual
-  const readOnly = virtual && row.date < todayStr()
   const day = row.id
   const rowTint = stripe?.row && rowIdx % 2 === 1 ? `linear-gradient(90deg, ${tint(stripe.row, 0.17)}, ${tint(stripe.row, 0.05)})` : null
   const hue = stripe ? (rowIdx % 2 === 1 ? stripe.row : stripe.col) : null
@@ -163,7 +183,6 @@ function Row({ row, rowIdx, stripe, listCols, items, fieldCols, onEdit, onAdd, o
               <input
                 type="date"
                 value={row.date}
-                min={todayStr()}
                 onChange={(e) => onDate(e.target.value)}
                 aria-label="Row date"
                 className="field h-8 w-full min-w-0 px-2 text-sm"
@@ -194,7 +213,6 @@ function Row({ row, rowIdx, stripe, listCols, items, fieldCols, onEdit, onAdd, o
           key={col.id}
           day={day}
           virtual={virtual}
-          readOnly={readOnly}
           compact={mobile}
           collapsed={!mobile && col.width === 'collapsed'}
           label={rowTitle(row)}
@@ -244,9 +262,10 @@ export default function DateGrid({ dateCol }) {
   const [active, setActive] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const mobile = useIsMobile()
-  // Phones open on today's day view; wider screens open on the full table.
-  const [view, setView] = useState(() => (isMobileNow() ? 'day' : 'all')) // all | month | day
+  // Phones open on today's day view; wider screens open on this week.
+  const [view, setView] = useState(() => (isMobileNow() ? 'day' : 'week')) // month | week | day
   const [month, setMonth] = useState(() => todayStr().slice(0, 7))
+  const [weekStart, setWeekStart] = useState(() => weekStartOf(todayStr()))
   const [dayPick, setDayPick] = useState(todayStr)
   const [confirm, confirmDialog] = useConfirm()
 
@@ -257,17 +276,21 @@ export default function DateGrid({ dateCol }) {
   const sortedRows = [...dateRows].sort((a, b) =>
     a.date && b.date ? a.date.localeCompare(b.date) : a.date ? -1 : b.date ? 1 : 0
   )
+  const weekEnd = shiftDay(weekStart, 6)
+  const undatedCount = data.items.filter((i) => !dayOf(i)).length
+  // Undated tasks and rows still waiting for a date are pinned on top of Month and Week, so nothing is hidden.
+  const pinned = [...(undatedCount ? [{ id: '', date: '' }] : []), ...sortedRows.filter((r) => !r.date)]
   let rows
   if (view === 'month') {
-    // Only that month's dated rows; an empty month is just an empty grid.
-    rows = sortedRows.filter((r) => r.date.startsWith(month))
+    rows = [...pinned, ...sortedRows.filter((r) => r.date && r.date.startsWith(month))]
+  } else if (view === 'week') {
+    rows = [...pinned, ...sortedRows.filter((r) => r.date && r.date >= weekStart && r.date <= weekEnd)]
   } else if (view === 'day') {
     rows = sortedRows.filter((r) => r.date === dayPick)
     // No row for that day yet: show an empty one that is created when a task is added.
     if (!rows.length) rows = [{ id: 'virtual', date: dayPick, virtual: true }]
-  } else {
-    rows = data.items.some((i) => !dayOf(i)) ? [{ id: '', date: '' }, ...sortedRows] : sortedRows
   }
+  const emptyRange = view !== 'day' && !rows.some((r) => r.date)
   const stripe = STRIPE_THEMES.find((t) => t.value === data.settings.stripes)
 
   const sensors = useSensors(
@@ -301,14 +324,15 @@ export default function DateGrid({ dateCol }) {
   }
 
   const addRow = () => {
-    // In month view, start the new row inside that month (never in the past).
+    // Start the new row inside the range being viewed: today if it is in range, else the first day.
+    const today = todayStr()
     let date = ''
-    if (view === 'month') date = month === todayStr().slice(0, 7) ? todayStr() : `${month}-01`
+    if (view === 'month') date = month === today.slice(0, 7) ? today : `${month}-01`
+    else if (view === 'week') date = today >= weekStart && today <= weekEnd ? today : weekStart
     setRows((rs) => [...rs, { id: uid('r'), date }])
   }
 
   const setRowDate = (id, date) => {
-    if (date && date < todayStr()) return
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, date } : r)))
   }
 
@@ -487,6 +511,25 @@ export default function DateGrid({ dateCol }) {
           </div>
         )}
 
+        {view === 'week' && (
+          <div className="flex items-center gap-1">
+            <button type="button" className="btn h-8 w-8 px-0" aria-label="Previous week" onClick={() => setWeekStart(shiftDay(weekStart, -7))}>
+              <ChevronLeft size={16} />
+            </button>
+            <span className="min-w-[10.5rem] text-center font-display text-base font-bold">{weekTitle(weekStart)}</span>
+            <button type="button" className="btn h-8 w-8 px-0" aria-label="Next week" onClick={() => setWeekStart(shiftDay(weekStart, 7))}>
+              <ChevronRight size={16} />
+            </button>
+            <button type="button" className="btn ml-1 h-8" onClick={() => setWeekStart(weekStartOf(todayStr()))}>This week</button>
+          </div>
+        )}
+
+        {view === 'day' && undatedCount > 0 && (
+          <button type="button" onClick={() => setView('week')} className="text-xs font-semibold text-accent underline">
+            {undatedCount} task{undatedCount === 1 ? ' has' : 's have'} no date. Show them
+          </button>
+        )}
+
         {view === 'day' && (
           <div className="flex items-center gap-1">
             <button type="button" className="btn h-8 w-8 px-0" aria-label="Previous day" onClick={() => setDayPick(shiftDay(dayPick, -1))}>
@@ -518,8 +561,8 @@ export default function DateGrid({ dateCol }) {
         {mobile ? (
           <div className="space-y-3">
             {rowEls}
-            {rows.length === 0 && (
-              <p className="px-1 py-10 text-center text-sm text-muted">No dates in this month yet.</p>
+            {emptyRange && (
+              <p className="px-1 py-8 text-center text-sm text-muted">No dates in this {view} yet. Use Add row.</p>
             )}
           </div>
         ) : (
@@ -579,13 +622,14 @@ export default function DateGrid({ dateCol }) {
 
             {rowEls}
           </div>
+          {emptyRange && <p className="px-4 py-8 text-sm text-muted">No dates in this {view} yet. Use Add row.</p>}
         </div>
         )}
 
         <DragOverlay>{activeItem && <CardBody item={activeItem} fieldCols={fieldCols} lifted />}</DragOverlay>
       </DndContext>
 
-      {(view === 'all' || (view === 'month' && month >= todayStr().slice(0, 7))) && (
+      {view !== 'day' && (
         <div className="shrink-0 pt-3">
           <button type="button" onClick={addRow} className="btn">
             <CalendarPlus size={16} /> Add row
